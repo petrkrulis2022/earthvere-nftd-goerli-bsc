@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 /// @author Georgi Karagyozov
-/// @notice Ownable contract used to manage other contract
+/// @notice Ownable contract used to manage NFT Dollar - NFTDollar contract.
 abstract contract Ownable {
   address private _owner;
   address public pendingOwner;
