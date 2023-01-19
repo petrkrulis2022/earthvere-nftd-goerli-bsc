@@ -1,29 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
-import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
-import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
-
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./interfaces/INFTDollar.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
-//Goerli
-/// the contract still needs to have the burn method of the Reth contract invoked ( at address 0x178e141a0e3b34152f73ff610437a7bf9b83267a ) so that it is able to unstake the reth and convert it back to eth
-// also need another mapping to store the amount of reth received from every swap of every msg.sender ( sincre reth/eth ratio is not 1:1.  ====DONE
-//this contract should also be approved to spend the tokens. It mmust be approved manually by the msg.sender by invoking the approve function in the USDT contract and using this contract's address as input
-
-interface INFTDollar {
-  function mint(address to, uint256 amount, uint256 decimalsOfInput) external;
-}
-
-interface IUniswap {
-  function swapExactInputSingle(
-    uint256 amountIn
-  ) external returns (uint256 amountOut);
-}
+//TODO the contract still needs to have the burn method of the Reth contract invoked ( at address 0x178e141a0e3b34152f73ff610437a7bf9b83267a ) so that it is able to unstake the reth and convert it back to eth
+//TODO also need another mapping to store the amount of reth received from every swap of every msg.sender ( sincre reth/eth ratio is not 1:1.  ====DONE
+//TODO this contract should also be approved to spend the tokens. It mmust be approved manually by the msg.sender by invoking the approve function in the USDT contract and using this contract's address as input
 
 interface IUSDT {
   function transferFrom(
@@ -46,26 +30,21 @@ interface ILido {
 }
 
 interface Iweth {
-  function approve(address _address, uint amount) external;
+  function approve(address sender, uint256 amount) external;
 
-  function withdraw(uint wad) external;
+  function withdraw(uint256 amount) external;
 }
 
 interface INFTLandToken {
-  function mint(address _address) external payable returns (uint256);
+  function mint(address to) external payable returns (uint256);
 }
 
 interface RETH {
   function balanceOf(address account) external view returns (uint256);
 }
 
-contract DepositAndSwapV3LidoRP is VRFConsumerBaseV2, ConfirmedOwner {
-  mapping(address => uint256) public balances;
-  mapping(address => mapping(address => uint256))
-    public totalSwappedStablecoins;
-  mapping(address => uint256) public depositedRethByUser;
-  mapping(address => uint256) public depositedLidoByUser;
-
+contract DepositAndSwapV3LidoRP {
+  uint24 constant poolFee = 3000;
   address constant RocketpoolAddress =
     0x2cac916b2A963Bf162f076C0a8a4a8200BCFBfb4;
   address constant testETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
@@ -78,15 +57,18 @@ contract DepositAndSwapV3LidoRP is VRFConsumerBaseV2, ConfirmedOwner {
   ISwapRouter public immutable swapRouter =
     ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
+  mapping(address => uint256) public balances;
+  mapping(address => mapping(address => uint256))
+    public totalSwappedStablecoins;
+  mapping(address => uint256) public depositedRethByUser;
+  mapping(address => uint256) public depositedLidoByUser;
+
   event Deposited(
     address indexed from,
     address indexed selectedPool,
     uint256 indexed amount
   );
   event Approval(address indexed owner, address indexed spender, uint256 value);
-
-  uint256 amountOutMin = 0; // best to be kept at 0, otherwise swap may not happen
-  uint24 constant poolFee = 3000;
 
   // 1. approving the router
   // 2. transfer stablecoin to this contract
@@ -188,107 +170,6 @@ contract DepositAndSwapV3LidoRP is VRFConsumerBaseV2, ConfirmedOwner {
     emit Deposited(msg.sender, LidoContractAddress, amount);
 
     return amount;
-  }
-
-  event RequestSent(uint256 requestId, uint32 numWords);
-  event RequestFulfilled(uint256 requestId, uint256[] randomWords);
-
-  struct RequestStatus {
-    bool fulfilled; // Whether the request has been successfully fulfilled
-    bool exists; // Whether a requestId exists
-    uint256[] randomWords;
-  }
-  mapping(uint256 => RequestStatus)
-    public s_requests; /* requestId --> requestStatus */
-  VRFCoordinatorV2Interface COORDINATOR;
-
-  // Your subscription ID.
-  uint64 s_subscriptionId;
-
-  // Past requests Id.
-  uint256[] public requestIds;
-  uint256 public lastRequestId;
-
-  // The gas lane to use, which specifies the maximum gas price to bump to.
-  // For a list of available gas lanes on each network,
-  // see https://docs.chain.link/docs/vrf/v2/subscription/supported-networks/#configurations
-  bytes32 keyHash =
-    0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
-
-  // Depends on the number of requested values that you want sent to the
-  // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
-  // so 100,000 is a safe default for this example contract. Test and adjust
-  // this limit based on the network that you select, the size of the request,
-  // and the processing of the callback request in the fulfillRandomWords()
-  // function.
-  uint32 callbackGasLimit = 100000;
-
-  // The default is 3, but you can set this higher.
-  uint16 requestConfirmations = 3;
-
-  // For this example, retrieve 2 random values in one request.
-  // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
-  uint32 numWords = 2;
-
-  /**
-   * HARDCODED FOR GOERLI
-   * COORDINATOR: 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D
-   */
-  constructor(
-    uint64 subscriptionId
-  )
-    VRFConsumerBaseV2(0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D)
-    ConfirmedOwner(msg.sender)
-  {
-    COORDINATOR = VRFCoordinatorV2Interface(
-      0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D
-    );
-    s_subscriptionId = subscriptionId;
-  }
-
-  // Assumes the subscription is funded sufficiently.
-  /// @notice TODO
-  function requestRandomWords() external returns (uint256 requestId) {
-    // Will revert if subscription is not set and funded.
-    requestId = COORDINATOR.requestRandomWords(
-      keyHash,
-      s_subscriptionId,
-      requestConfirmations,
-      callbackGasLimit,
-      numWords
-    );
-    s_requests[requestId] = RequestStatus({
-      randomWords: new uint256[](0),
-      exists: true,
-      fulfilled: false
-    });
-    requestIds.push(requestId);
-    lastRequestId = requestId;
-    emit RequestSent(requestId, numWords);
-    return requestId;
-  }
-
-  /// @notice TODO
-  /// @param _requestId: TODO
-  /// @param _randomWords: TODO
-  function fulfillRandomWords(
-    uint256 _requestId,
-    uint256[] memory _randomWords
-  ) internal override {
-    require(s_requests[_requestId].exists, "request not found");
-    s_requests[_requestId].fulfilled = true;
-    s_requests[_requestId].randomWords = _randomWords;
-    emit RequestFulfilled(_requestId, _randomWords);
-  }
-
-  /// @notice TODO
-  /// @param _requestId: TODO
-  function getRequestStatus(
-    uint256 _requestId
-  ) external view returns (bool fulfilled, uint256[] memory randomWords) {
-    require(s_requests[_requestId].exists, "request not found");
-    RequestStatus memory request = s_requests[_requestId];
-    return (request.fulfilled, request.randomWords);
   }
 
   fallback() external payable {}
