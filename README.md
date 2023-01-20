@@ -1,13 +1,17 @@
-# NFTD Stablecoin
+# NFTD - Stablecoin
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
-
-Try running some of the following tasks:
+::BSC Test Net::
 
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
+npx hardhat run scripts/nftDollar/deploy.js --network binanceSmartChainTestNet
+npx hardhat run scripts/nftLand/deploy.js --network binanceSmartChainTestNet
+npx hardhat run scripts/vRFv2Consumer/deploy.js --network binanceSmartChainTestNet
+```
+
+::BSC Main Net::
+
+```shell
+npx hardhat run scripts/nftDollar/deploy.js --network binanceSmartChainMainNet
+npx hardhat run scripts/nftLand/deploy.js --network binanceSmartChainMainNet
+npx hardhat run scripts/vRFv2Consumer/deploy.js --network binanceSmartChainMainNet
 ```
