@@ -5,6 +5,7 @@ import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
+/// @notice TODO
 contract VRFv2Consumer is VRFConsumerBaseV2, ConfirmedOwner {
   struct RequestStatus {
     bool fulfilled; // Whether the request has been successfully fulfilled
