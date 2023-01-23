@@ -1,11 +1,12 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+import "./interfaces/INFTLandToken.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 /// @notice TODO
-contract NFTLand is ERC721URIStorage {
+contract NFTLand is INFTLandToken, ERC721URIStorage {
   using Counters for Counters.Counter;
   Counters.Counter tokenIds;
 
@@ -17,10 +18,10 @@ contract NFTLand is ERC721URIStorage {
   function mint(
     address to,
     string memory tokenURI
-  ) public payable returns (uint256) {
+  ) external payable returns (uint256) {
     uint256 newTokenId = tokenIds.current();
 
-    _mint(to, newTokenId);
+    _safeMint(to, newTokenId);
     _setTokenURI(newTokenId, tokenURI);
     tokenIds.increment();
 
