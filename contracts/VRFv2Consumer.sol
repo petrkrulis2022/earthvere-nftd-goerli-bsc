@@ -5,7 +5,6 @@ import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
-/// @notice TODO
 contract VRFv2Consumer is VRFConsumerBaseV2, ConfirmedOwner {
   struct RequestStatus {
     bool fulfilled; // Whether the request has been successfully fulfilled
@@ -26,7 +25,7 @@ contract VRFv2Consumer is VRFConsumerBaseV2, ConfirmedOwner {
   // For a list of available gas lanes on each network,
   // see https://docs.chain.link/docs/vrf/v2/subscription/supported-networks/#configurations
   bytes32 keyHash =
-    0xd4bb89654db74673a187bd804519e65e3f71a52bc55f11da7601a13dcf505314;
+    0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
 
   // Depends on the number of requested values that you want sent to the
   // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
@@ -48,18 +47,14 @@ contract VRFv2Consumer is VRFConsumerBaseV2, ConfirmedOwner {
   event RequestSent(uint256 requestId, uint32 numWords);
   event RequestFulfilled(uint256 requestId, uint256[] randomWords);
 
-  /**
-   * HARDCODED FOR BNB CHAIN TESTNET
-   * COORDINATOR: 0x6A2AAd07396B36Fe02a22b33cf443582f682c82f
-   */
   constructor(
     uint64 subscriptionId
   )
-    VRFConsumerBaseV2(0x6A2AAd07396B36Fe02a22b33cf443582f682c82f)
+    VRFConsumerBaseV2(0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D)
     ConfirmedOwner(msg.sender)
   {
     COORDINATOR = VRFCoordinatorV2Interface(
-      0x6A2AAd07396B36Fe02a22b33cf443582f682c82f
+      0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D
     );
     s_subscriptionId = subscriptionId;
   }
@@ -85,9 +80,9 @@ contract VRFv2Consumer is VRFConsumerBaseV2, ConfirmedOwner {
     return requestId;
   }
 
-  /// @notice TODO
-  /// @param _requestId: TODO
-  /// @param _randomWords: TODO
+  /// @notice Function processes and stores the received random values.
+  /// @param _requestId: Identifier of a given request
+  /// @param _randomWords: Pandom Words parameter
   function fulfillRandomWords(
     uint256 _requestId,
     uint256[] memory _randomWords
@@ -98,8 +93,8 @@ contract VRFv2Consumer is VRFConsumerBaseV2, ConfirmedOwner {
     emit RequestFulfilled(_requestId, _randomWords);
   }
 
-  /// @notice TODO
-  /// @param _requestId: TODO
+  /// @notice Specifying the requestId to display the random words.
+  /// @param _requestId: Identifier of a given request
   function getRequestStatus(
     uint256 _requestId
   ) external view returns (bool fulfilled, uint256[] memory randomWords) {

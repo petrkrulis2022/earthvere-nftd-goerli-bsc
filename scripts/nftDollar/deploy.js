@@ -10,7 +10,7 @@ const main = async () => {
   // Print the address of the deployed contract
   console.log(`Contract NFT Dollar deployed to:`, nftDollar.address);
 
-  // Wait for bscscan to notice that the contract has been deployed
+  // Wait for scan to notice that the contract has been deployed
   await nftDollar.deployTransaction.wait(10);
 
   // Verify the contract after deploying

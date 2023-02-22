@@ -1,30 +1,25 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "./interfaces/INFTLandToken.sol";
+import "./interfaces/INFTLand.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-/// @notice TODO
-contract NFTLand is INFTLandToken, ERC721URIStorage {
+contract NFTLand is INFTLand, ERC721URIStorage {
   using Counters for Counters.Counter;
-  Counters.Counter tokenIds;
+  Counters.Counter private _tokenIds;
 
   constructor() ERC721("NFT Land", "NFTL") {}
 
-  /// @notice TODO
-  /// @param to: TODO
-  /// @param tokenURI: TODO
-  function mint(
-    address to,
-    string memory tokenURI
-  ) external payable returns (uint256) {
-    uint256 newTokenId = tokenIds.current();
+  /// @notice Allows the user to mint a nft land
+  /// @param ipfsURI: IPFS's link where the img is stored
+  function safeMintNFT(
+    string calldata ipfsURI
+  ) external returns (uint256 newTokenId) {
+    newTokenId = _tokenIds.current();
 
-    _safeMint(to, newTokenId);
-    _setTokenURI(newTokenId, tokenURI);
-    tokenIds.increment();
-
-    return newTokenId;
+    _safeMint(msg.sender, newTokenId);
+    _setTokenURI(newTokenId, ipfsURI);
+    _tokenIds.increment();
   }
 }

@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+error Ownable_ZeroAddress();
+error Ownable_CallerIsNotTheOwner();
+error Ownable_CallerIsNotPendingOwner();
+error Ownable_NewOwnerMustBeADifferentAddressThanTheCurrentOwner();
+
 /// @author Georgi Karagyozov
 /// @notice Ownable contract used to manage NFT Dollar - NFTDollar contract.
 abstract contract Ownable {
@@ -19,7 +24,7 @@ abstract contract Ownable {
 
   /// @notice Throws if called by any account other than the owner.
   modifier onlyOwner() {
-    require(owner() == msg.sender, "Ownable: caller is not the owner");
+    if (owner() != msg.sender) revert Ownable_CallerIsNotTheOwner();
     _;
   }
 
@@ -38,12 +43,11 @@ abstract contract Ownable {
   /// @param newOwner: The address of the new owner of the contract
   /// @param direct: Boolean parameter that will be used to change the owner of the contract directly
   function transferOwnership(address newOwner, bool direct) external onlyOwner {
+    if (newOwner == address(0)) revert Ownable_CallerIsNotTheOwner();
+
     if (direct) {
-      require(newOwner != address(0), "Ownable: zero address");
-      require(
-        newOwner != _owner,
-        "Ownable: newOwner must be a different address than the current owner"
-      );
+      if (newOwner == _owner)
+        revert Ownable_NewOwnerMustBeADifferentAddressThanTheCurrentOwner();
 
       _transferOwnership(newOwner);
       pendingOwner = address(0);
@@ -54,7 +58,7 @@ abstract contract Ownable {
 
   /// @notice The `pendingOwner` have to confirm, if he wants to be the new owner of the contract.
   function claimOwnership() external {
-    require(msg.sender == pendingOwner, "Ownable: caller != pending owner");
+    if (msg.sender != pendingOwner) revert Ownable_CallerIsNotPendingOwner();
 
     _transferOwnership(pendingOwner);
     pendingOwner = address(0);
