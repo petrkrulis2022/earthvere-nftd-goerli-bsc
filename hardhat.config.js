@@ -19,6 +19,11 @@ module.exports = {
       gasPrice: 20000000000,
       chainId: 97,
     },
+    goerliTestNet: {
+      url: process.env.GOERLI_TEST_NET_PROVIDER_URL,
+      accounts: [process.env.WALLET_PRIVATE_KEY],
+      chainId: 5,
+    },
   },
   solidity: {
     version: "0.8.17",
@@ -30,6 +35,7 @@ module.exports = {
     },
   },
   etherscan: {
-    apiKey: process.env.BSC_SCAN_API_KEY,
+    // apiKey: process.env.BSC_SCAN_API_KEY,
+    apiKey: process.env.ETH_SCAN_API_KEY,
   },
 };
