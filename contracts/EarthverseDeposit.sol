@@ -3,23 +3,10 @@ pragma solidity ^0.8.17;
 
 import "./interfaces/INFTDollar.sol";
 import "./interfaces/IEarthverseMarketplace.sol";
+import "./interfaces/IEarthverseDeposit.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-interface IRocketpool {
-  function deposit() external payable;
-}
-
-interface IWETH {
-  function approve(address sender, uint256 amount) external;
-
-  function withdraw(uint256 amount) external;
-}
-
-error EarthverseDeposit_ZeroAddress();
-error EarthverseDeposit_NoRETHWasMinted();
-error EarthverseDeposit_InvalidDepositAmount();
 
 contract EarthverseDeposit {
   address public constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
@@ -53,12 +40,13 @@ contract EarthverseDeposit {
   /// using the stablecoin/WETH 0.3% pool by calling `exactInputSingle` in the swap router.
   /// @dev The calling address must approve this contract to spend at least `amountIn` worth of its stablecoin for this function to succeed.
   /// @param amountIn The exact amount of stablecoin that will be swapped for WETH.
+  /// @param tokenIn: Stablecoin's address, which we will swap fro WETH.
   /// @return amountOut The amount of WETH received.
   function swapExactInputSingle(
     uint256 amountIn,
     address tokenIn
   ) private returns (uint256 amountOut) {
-    // Transfer the specified amount of stablecoin to this contract.
+    // Transfer the specified amount of stablecoin to this contract
     TransferHelper.safeTransferFrom(
       tokenIn,
       msg.sender,
@@ -66,7 +54,7 @@ contract EarthverseDeposit {
       amountIn
     );
 
-    // Approve the router to spend stablecoin.
+    // Approve the router to spend stablecoin
     TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
 
     // Swaps stablecoin for WETH

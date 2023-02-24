@@ -18,8 +18,6 @@ interface ILido {
 }
 
 interface IWETH {
-  function approve(address sender, uint256 amount) external;
-
   function withdraw(uint256 amount) external;
 }
 
